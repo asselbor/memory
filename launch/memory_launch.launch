@@ -3,29 +3,29 @@
 
   <node pkg="memory" type="animations_manager.py" name="animations_manager">
     <param name="id_robot" value="1" />
-	<param name="nao_ip" value="10.0.0.10" />
-	<param name="nao_port" value="9559" />
-	<param name="periodUpdateTimerBSI" value="0.1" />  
-	<param name="topic_animations" value="topic_animations" />
-	<param name="topic_settings" value="topic_settings" />
-	<param name="topic_poses" value="topic_poses" />
-	<param name="topic_activity" value="topic_activity" />
-	<param name="topic_end_animation" value="topic_end_animation" />
-	<param name="parkinson_scale" value="3" />
+  	<param name="nao_ip" value="10.0.0.10" />
+  	<param name="nao_port" value="9559" />
+  	<param name="periodUpdateTimerBSI" value="0.1" />  
+  	<param name="topic_animations" value="topic_animations" />
+  	<param name="topic_settings" value="topic_settings" />
+  	<param name="topic_poses" value="topic_poses" />
+  	<param name="topic_activity" value="topic_activity" />
+  	<param name="topic_end_animation" value="topic_end_animation" />
+  	<param name="parkinson_scale" value="3" />
   </node>
 
   <!--
   <node pkg="memory" type="animations_manager.py" name="animations_manager2">
   	<param name="id_robot" value="2" />
-	<param name="nao_ip" value="10.0.0.8" />
-	<param name="nao_port" value="9559" />
-	<param name="periodUpdateTimerBSI" value="0.1" />  
-	<param name="topic_animations" value="topic_animations" />
-	<param name="topic_settings" value="topic_settings" />
-	<param name="topic_poses" value="topic_poses" />
-	<param name="topic_activity" value="topic_activity" />
-	<param name="topic_end_animation" value="topic_end_animation" />
-	<param name="parkinson_scale" value="1" />
+  	<param name="nao_ip" value="10.0.0.8" />
+  	<param name="nao_port" value="9559" />
+  	<param name="periodUpdateTimerBSI" value="0.1" />  
+  	<param name="topic_animations" value="topic_animations" />
+  	<param name="topic_settings" value="topic_settings" />
+  	<param name="topic_poses" value="topic_poses" />
+  	<param name="topic_activity" value="topic_activity" />
+  	<param name="topic_end_animation" value="topic_end_animation" />
+  	<param name="parkinson_scale" value="1" />
   </node>
   -->
 
@@ -34,8 +34,9 @@
     <param name="topic_publisher_tablet" value="chatter" />
     <param name="topic_listener_tablet" value="game_action" />
     <param name="topic_end_animation" value="topic_end_animation" />
-    <param name="time_between_moves" value="3" />
     <param name="topic_gaze_match" value="topic_gaze_match" />
+    <param name="time_between_moves" value="3" />
+    <param name="game_number" value="2" />
   </node>
 
   <!-- Start the feature face tracker -->

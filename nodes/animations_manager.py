@@ -69,10 +69,23 @@ def callback_activityRobot(data):
     state = str(data.state)
     global robotBusy
 
+    
     # if message is for the concerned robot
     if playerId == robotId:
 
-        if state == "idle":
+        if state == "introduction":
+            if cNaoMotion.get_posture() == "Crouch":
+                # the robot needs to stand up in order to launch animations
+                cNaoMotion.stand()
+
+            # wait until the robot stops moving
+            while cNaoMotion.isMoving():
+                rospy.sleep(0.1)
+
+            # make the robot introduce himself
+            cNaoMotion.introduceHimself(playerId)
+
+        elif state == "idle":
             if cNaoMotion.get_posture() == "Crouch":
                 # the robot needs to stand up in order to launch animations
                 cNaoMotion.stand()
@@ -138,6 +151,18 @@ def callback_activityRobot(data):
             # the two cards have been returned, tell that to tablet and memory game
             publisher_end_animation.publish(cNaoMotion.lastAnimation)
 
+        elif state == "winner":
+            # the robot is busy (doing a task)
+            robotBusy = True
+
+            # wait until the robot is not doing anything
+            while cNaoMotion.isMoving():
+                rospy.sleep(0.1)
+
+            # make the robot celebrate the victory
+            cNaoMotion.celebrateVictory()
+
+
 def callback_timer_animation(event):
 
     global timerLaunchAnimation
@@ -148,6 +173,9 @@ def callback_timer_animation(event):
         timerLaunchAnimation.shutdown()
         timerLaunchAnimation = rospy.Timer(rospy.Duration(cBSI.periodAnimation), callback_timer_animation, oneshot=True)
  
+
+
+
 if __name__ == "__main__":
 
     # create a unique node

@@ -63,6 +63,7 @@ import animations.reject4_pose
 import animations.reject5_pose
 import animations.IdontKnow_pose
 import animations.IdontKnow2_pose
+import animations.introduction_pose
 
 from BSI import *
 from naoqi import ALProxy
@@ -81,7 +82,9 @@ states = {
 "medium": {"normal": [6, 8, 9, 1, 21, 5, 12, 26], "happy": [11, 18, 19], "sad": [25, 29, 30, 31]}, 
 "high": {"normal": [1, 2, 4, 37, 38, 42], "happy": [15, 16, 17], "sad": [27, 28, 34, 36]},
 "thinking": [43, 44, 45, 46, 47, 48, 49, 50, 51],
-"quotes": {"confident": ["A moi", "c'est mon tour", "Attend, je vais te montrer !", "Facile !", "Regarde, c'est facile !", "Regarde ce qu'il faut faire !"], "neutral": ["A moi de jouer", "C'est mon tour", "Facile, Regarde"], "random": ["Pas facile", "Je ne sais pas quoi jouer", "Au hasard"], "success": ["Et bim!", "C'est qui le patron ?", "Yes!", "Un point de plus pour moi"], "defeat": ["Au prochain", "J'ai pas de chance", "Pas de bol!", "Au suivant"]}
+"quotes": {"confident": ["A moi", "c'est mon tour", "Attend, je vais te montrer !", "Facile !", "Regarde, c'est facile !", "Regarde ce qu'il faut faire !"], "neutral": ["A moi de jouer", "C'est mon tour", "Facile, Regarde"], "random": ["Pas facile", "Je ne sais pas quoi jouer", "Au hasard"], "success": ["Et bim!", "C'est qui le patron ?", "Yes!", "Un point de plus pour moi"], "defeat": ["Au prochain", "J'ai pas de chance", "Pas de bol!", "Au suivant"]},
+"introduction": {1: "Salut. Je m'appelle clem. Est ce que tu veux jouer avec moi ?", 2: "Hello. Moi c'est mimi. On fait une partie ?"},
+"celebration": ["J'ai gagné la partie", "La victoire est pour moi", "Je suis le meilleur"]
 }
 
 
@@ -113,7 +116,7 @@ class NaoMotion():
 		self.breath(cBSI)
 		self.faceFolowing(cBSI.faceTracking)
 
-	def runMotion(self, pose, factorSpeed, factorAmpl, audioFile = None, delayAudioInit = None):
+	def runMotion(self, pose, factorSpeed = 1.0, factorAmpl = 1.0, audioFile = None, delayAudioInit = None):
 
 		times = self.increaseSpeed(pose.times, factorSpeed)
 		keys = self.increaseAmplitude(pose.keys, pose.names, factorAmpl)
@@ -342,6 +345,7 @@ class NaoMotion():
 		# randomly select two different thinking state
 		allStates = states["thinking"]
 		randomState = random.choice(allStates)
+		self.debug.publish(str(randomState))
 
 		self.launch(randomState)
 		self.runMotion(animations.bendCard_pose, factorSpeed, factorAmpl)
@@ -452,4 +456,34 @@ class NaoMotion():
 		else:
 			self.faceDetectionProxy.stopAwareness()
 
-			
+	def introduceHimself(self, idRobot):
+
+		# launch the animation corresponding to the salutation
+		self.runMotion(animations.introduction_pose)
+
+		# get the presentation sentence
+		stringToSay = states["introduction"][idRobot]
+
+		# NAO introduce itself
+		self.textSpeakProxy.post.say(stringToSay)
+
+		
+	def celebrateVictory(self):
+
+		# randomly select one state and launch it
+		randomState = random.choice(states["high"]["happy"])
+		self.launch(randomState)
+
+		# wait that the robot finish moving and say something to the kid
+		while self.isMoving() == True:
+			rospy.sleep(0.2)
+
+		# get one random sentence that NAO needs to say
+		randomStr = random.choice(states["celebration"])
+		self.textSpeakProxy.say(randomStr)
+
+
+
+
+
+

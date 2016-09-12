@@ -20,13 +20,13 @@ from os.path import expanduser
 
 class MemoryGame():
 
-	def __init__(self, nbPlayer = 3, nbCard = 16, firstPlayer = 0):
+	def __init__(self, nbPlayer = 3, nbCard = 16, firstPlayer = 0, gameNumber = 1):
 		
 		self.nbPlayer = nbPlayer
 
-		# to do, test confitions on nbCard -> impair, 0, toomuch
 		self.nbCard = nbCard
 		self.roundGame = 0
+		self.gameNumber = gameNumber
 
 		if firstPlayer < 0 or firstPlayer > self.nbPlayer:
 			self.player = 0
@@ -118,6 +118,10 @@ class MemoryGame():
 		# communicate nb value to position to tablet
 		publisher_tablet.publish(myStr)
 
+		# get the type of cards to use in function of the game number
+		myStr = "m " + str(self.gameNumber)
+		publisher_tablet.publish(myStr)
+
 	def nextPlayer(self):
 		self.player += 1
 
@@ -206,9 +210,21 @@ class MemoryGame():
 				# switch to next player
 				self.nextPlayer()
 
-				
 			# increase round game
 			self.roundGame += 1
+
+		# at this point one of the player has won, launch animation for robots
+		self.endGame()
+
+	def endGame(self):
+
+		newMsg = Activity()
+
+		winner = self.findWinner()
+		if winner == 1 or winner == 2:
+			newMsg.player = winner
+			newMsg.state = "winner"
+			publisher_activity.publish(newMsg)
 
 	def checkIfVictory(self):
 
@@ -340,7 +356,7 @@ class MemoryGame():
 
 		# save action logs
 		with open(home + "/outputMemory/outputActions_" + date + ".txt", "w") as f:
-			f.write("game at: " + date + "\n")
+			f.write("game at: " + date + " game number: " + str(self.gameNumber) + "\n")
 
 			for actionLog in self.listActionLog:
 				myStr = "round: " + str(actionLog.roundGame) + " date: " + actionLog.date + " player: " + str(actionLog.player)
@@ -352,7 +368,7 @@ class MemoryGame():
 
 		# save gaze logs
 		with open(home + "/outputMemory/outputGaze_" + date + ".txt", "w") as f:
-			f.write("game at: " + date + "\n")
+			f.write("game at: " + date + " game number: " + str(self.gameNumber) + "\n")
 
 			for gazeLog in self.listGazeLog:
 				myStr = " date: " + gazeLog.date + " robot match: " + str(gazeLog.robotId) + "\n"
@@ -362,7 +378,7 @@ class MemoryGame():
 
 		# save animation logs
 		with open(home + "/outputMemory/outputAnimation_" + date + ".txt", "w") as f:
-			f.write("game at: " + date + "\n")
+			f.write("game at: " + date + " game number: " + str(self.gameNumber) + "\n")
 
 			for animationLog in self.listAnimationLog:
 				myStr = " date start: " + animationLog.dateStart + "  date end: " + animationLog.dateEnd
@@ -393,9 +409,12 @@ if __name__ == "__main__":
 
 	TOPIC_PUBLISHER_TABLET = rospy.get_param('~topic_publisher_tablet')
 	publisher_tablet = rospy.Publisher(TOPIC_PUBLISHER_TABLET, String, queue_size=10)
-
+	
 	# get the time to wait between player moves
 	TIME_BETWEEN_MOVES = float(rospy.get_param('~time_between_moves'))
+
+	# get the game number
+	GAME_NUMBER = int(rospy.get_param('~game_number'))
 
 	# debug topic
 	debug = rospy.Publisher("debug", String, queue_size=10)
@@ -403,7 +422,22 @@ if __name__ == "__main__":
 	# give time for rospy to connect
 	rospy.sleep(1)
 
-	# publish message saying every robots are idle
+
+	# the robots needs to introduce themself if it's the first game
+	if GAME_NUMBER == 1:
+		# first robot introduces himself
+		newMsg = Activity()
+		newMsg.player = 1
+		newMsg.state = "introduction"
+		publisher_activity.publish(newMsg)
+		rospy.sleep(4)
+
+		# second robot introduces himself
+		# newMsg.player = 2
+		# publisher_activity.publish(msg)
+		# rospy.sleep(4)
+
+	# publish message saying that every robots are idle
 	newMsg = Activity()
 	newMsg.player = 1
 	newMsg.state = "idle"
@@ -411,9 +445,12 @@ if __name__ == "__main__":
 	newMsg.player = 2
 	publisher_activity.publish(newMsg)
 
-	game = MemoryGame(nbPlayer = 2)
+	# launch the game
+	game = MemoryGame(nbPlayer = 2, gameNumber = GAME_NUMBER)
 	game.play()
 	game.saveLogs()
+
+
 
 	rospy.spin()
 
