@@ -22,6 +22,7 @@ class BSI():
 		self.breathEnable = False
 		self.periodAnimation = None
 		self.faceTracking = True
+		self.mood.append("low")
 
 		# line equation of bpm/amp => bpm = 30 - 25*amp. amp [0, 1]; bpm [0, 30]
 		if self.parkinsonScale == 2:

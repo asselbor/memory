@@ -20,7 +20,7 @@ from os.path import expanduser
 
 class MemoryGame():
 
-	def __init__(self, nbPlayer = 3, nbCard = 16, firstPlayer = 0, gameNumber = 1):
+	def __init__(self, nbPlayer = 3, nbCard = 16, firstPlayer = 0, gameNumber = 0):
 		
 		self.nbPlayer = nbPlayer
 
@@ -83,6 +83,12 @@ class MemoryGame():
 				return card
 
 	def createCards(self):
+
+		# get the type of cards to use in function of the game number
+		myStr = "m " + str(self.gameNumber)
+		publisher_tablet.publish(myStr)
+		rospy.sleep(1)
+		
 		value = 0
 		nbValue = self.nbCard/2
 		vectorIndice = range(0, self.nbCard)
@@ -118,10 +124,7 @@ class MemoryGame():
 		# communicate nb value to position to tablet
 		publisher_tablet.publish(myStr)
 
-		# get the type of cards to use in function of the game number
-		myStr = "m " + str(self.gameNumber)
-		publisher_tablet.publish(myStr)
-
+		
 	def nextPlayer(self):
 		self.player += 1
 
@@ -351,6 +354,9 @@ class MemoryGame():
 
 	def saveLogs(self):
 
+		# stop reccording audio + video
+		publisher_end_record.publish("end")
+
 		home = expanduser("~")
 		date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -409,7 +415,10 @@ if __name__ == "__main__":
 
 	TOPIC_PUBLISHER_TABLET = rospy.get_param('~topic_publisher_tablet')
 	publisher_tablet = rospy.Publisher(TOPIC_PUBLISHER_TABLET, String, queue_size=10)
-	
+
+	TOPIC_PUBLISHER_END_RECORD = rospy.get_param('~topic_end_record')
+	publisher_end_record = rospy.Publisher(TOPIC_PUBLISHER_END_RECORD, String, queue_size=10)
+
 	# get the time to wait between player moves
 	TIME_BETWEEN_MOVES = float(rospy.get_param('~time_between_moves'))
 
@@ -424,7 +433,7 @@ if __name__ == "__main__":
 
 
 	# the robots needs to introduce themself if it's the first game
-	if GAME_NUMBER == 1:
+	if GAME_NUMBER == 0:
 		# first robot introduces himself
 		newMsg = Activity()
 		newMsg.player = 1
@@ -432,10 +441,9 @@ if __name__ == "__main__":
 		publisher_activity.publish(newMsg)
 		rospy.sleep(4)
 
-		# second robot introduces himself
-		# newMsg.player = 2
-		# publisher_activity.publish(msg)
-		# rospy.sleep(4)
+		#second robot introduces himself
+		newMsg.player = 2
+		publisher_activity.publish(newMsg)
 
 	# publish message saying that every robots are idle
 	newMsg = Activity()
@@ -446,7 +454,7 @@ if __name__ == "__main__":
 	publisher_activity.publish(newMsg)
 
 	# launch the game
-	game = MemoryGame(nbPlayer = 2, gameNumber = GAME_NUMBER)
+	game = MemoryGame(nbPlayer = 3, gameNumber = GAME_NUMBER)
 	game.play()
 	game.saveLogs()
 

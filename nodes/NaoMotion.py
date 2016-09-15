@@ -78,10 +78,10 @@ from std_msgs.msg import String
 
 
 states = {
-"low": {"normal": [7, 13, 14, 20, 22, 24, 35, 39, 40, 41], "happy": [10], "sad": [23, 32, 33]}, 
+"low": {"normal": [7, 13, 14, 20, 22, 24, 35, 39, 40, 41], "happy": [10, 11, 18, 19], "sad": [23, 32, 33]}, 
 "medium": {"normal": [6, 8, 9, 1, 21, 5, 12, 26], "happy": [11, 18, 19], "sad": [25, 29, 30, 31]}, 
 "high": {"normal": [1, 2, 4, 37, 38, 42], "happy": [15, 16, 17], "sad": [27, 28, 34, 36]},
-"thinking": [43, 44, 45, 46, 47, 48, 49, 50, 51],
+"thinking": [43, 44, 46, 47, 48, 49, 50], #45, 51 removed dur to the robot standing up too quickly
 "quotes": {"confident": ["A moi", "c'est mon tour", "Attend, je vais te montrer !", "Facile !", "Regarde, c'est facile !", "Regarde ce qu'il faut faire !"], "neutral": ["A moi de jouer", "C'est mon tour", "Facile, Regarde"], "random": ["Pas facile", "Je ne sais pas quoi jouer", "Au hasard"], "success": ["Et bim!", "C'est qui le patron ?", "Yes!", "Un point de plus pour moi"], "defeat": ["Au prochain", "J'ai pas de chance", "Pas de bol!", "Au suivant"]},
 "introduction": {1: "Salut. Je m'appelle clem. Est ce que tu veux jouer avec moi ?", 2: "Hello. Moi c'est mimi. On fait une partie ?"},
 "celebration": ["J'ai gagné la partie", "La victoire est pour moi", "Je suis le meilleur"]
@@ -106,7 +106,7 @@ class NaoMotion():
 		self.lastQuote = ""
 
 		# set language to speak french
-		self.textSpeakProxy.setLanguage("French")
+		#self.textSpeakProxy.setLanguage("French")
 
 		# debug topic
 		self.debug = rospy.Publisher("debug", String, queue_size=10)
@@ -345,7 +345,6 @@ class NaoMotion():
 		# randomly select two different thinking state
 		allStates = states["thinking"]
 		randomState = random.choice(allStates)
-		self.debug.publish(str(randomState))
 
 		self.launch(randomState)
 		self.runMotion(animations.bendCard_pose, factorSpeed, factorAmpl)
@@ -410,7 +409,6 @@ class NaoMotion():
 		# if the robot isn't in standing posture, go to it
 		if self.postureProxy.getPosture() == "Crouch":
 			self.stand()
-			self.start_breathing()
 
 	def get_posture(self):
 
@@ -466,7 +464,6 @@ class NaoMotion():
 
 		# NAO introduce itself
 		self.textSpeakProxy.post.say(stringToSay)
-
 		
 	def celebrateVictory(self):
 
@@ -481,9 +478,3 @@ class NaoMotion():
 		# get one random sentence that NAO needs to say
 		randomStr = random.choice(states["celebration"])
 		self.textSpeakProxy.say(randomStr)
-
-
-
-
-
-
