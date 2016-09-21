@@ -65,35 +65,35 @@ import animations.IdontKnow_pose
 import animations.IdontKnow2_pose
 import animations.introduction_pose
 
+
 from BSI import *
 from naoqi import ALProxy
 import random
 import time
 import copy
-
+import datetime
 
 #debug
 import rospy
 from std_msgs.msg import String
+from memory.msg import Animation
 
 
 states = {
 "low": {"normal": [7, 13, 14, 20, 22, 24, 35, 39, 40, 41], "happy": [10, 11, 18, 19], "sad": [23, 32, 33]}, 
-"medium": {"normal": [6, 8, 9, 1, 21, 5, 12, 26], "happy": [11, 18, 19], "sad": [25, 29, 30, 31]}, 
+"medium": {"normal": [52, 6, 8, 9, 1, 21, 5, 12, 26], "happy": [11, 18, 19], "sad": [25, 29, 30, 31]}, 
 "high": {"normal": [1, 2, 4, 37, 38, 42], "happy": [15, 16, 17], "sad": [27, 28, 34, 36]},
-"thinking": [43, 44, 46, 47, 48, 49, 50], #45, 51 removed dur to the robot standing up too quickly
+"thinking": [43, 44, 46, 47, 48, 49, 50], #45, 51 removed due to the robot standing up too quickly
 "quotes": {"confident": ["A moi", "c'est mon tour", "Attend, je vais te montrer !", "Facile !", "Regarde, c'est facile !", "Regarde ce qu'il faut faire !"], "neutral": ["A moi de jouer", "C'est mon tour", "Facile, Regarde"], "random": ["Pas facile", "Je ne sais pas quoi jouer", "Au hasard"], "success": ["Et bim!", "C'est qui le patron ?", "Yes!", "Un point de plus pour moi"], "defeat": ["Au prochain", "J'ai pas de chance", "Pas de bol!", "Au suivant"]},
 "introduction": {1: "Salut. Je m'appelle clem. Est ce que tu veux jouer avec moi ?", 2: "Hello. Moi c'est mimi. On fait une partie ?"},
 "celebration": ["J'ai gagné la partie", "La victoire est pour moi", "Je suis le meilleur"]
 }
-
-
 bodyBottom = ["LHipYawPitch", "LHipRoll", "LHipPitch", "LKneePitch", "LAnklePitch", "LAnkleRoll", "RHipYawPitch", "RHipRoll", "RHipPitch", "RKneePitch", "RAnklePitch", "RAnkleRoll"]
-
+animation_return_card = 0
 
 class NaoMotion():
 
-	def __init__(self, NAO_IP, PORT, cBSI):
+	def __init__(self, NAO_IP, PORT, cBSI, idRobot):
 
 		# create proxies
 		self.motionProxy = ALProxy("ALMotion", NAO_IP, PORT)
@@ -101,28 +101,39 @@ class NaoMotion():
 		self.postureProxy = ALProxy("ALRobotPosture", NAO_IP, PORT)
 		self.faceDetectionProxy = ALProxy("ALBasicAwareness", NAO_IP, PORT)
 		self.textSpeakProxy = ALProxy("ALTextToSpeech", NAO_IP, PORT)
+		
 
 		self.lastAnimation = 0
 		self.lastQuote = ""
 
 		# set language to speak french
-		#self.textSpeakProxy.setLanguage("French")
+		self.textSpeakProxy.setLanguage("French")
 
-		# debug topic
+		# publisher topics
 		self.debug = rospy.Publisher("debug", String, queue_size=10)
+		self.publisher_end_animation = rospy.Publisher("topic_end_animation", Animation, queue_size=10)
+
 		# activate module anti collision
 		self.motionProxy.setExternalCollisionProtectionEnabled("All", True)
 		# activate default behavior nao
 		self.breath(cBSI)
 		self.faceFolowing(cBSI.faceTracking)
 
-	def runMotion(self, pose, factorSpeed = 1.0, factorAmpl = 1.0, audioFile = None, delayAudioInit = None):
+		# a robot is defined by a unique id
+		self.idRobot = idRobot
 
+	def runMotion(self, pose, factorSpeed = 1.0, factorAmpl = 1.0, audioFile = None, delayAudioInit = None, post = True):
+
+		# post the animaiton
 		times = self.increaseSpeed(pose.times, factorSpeed)
 		keys = self.increaseAmplitude(pose.keys, pose.names, factorAmpl)
 		names = pose.names
 
-		self.motionProxy.post.angleInterpolationBezier(names, times, keys)
+		if post == True:
+			self.motionProxy.post.angleInterpolationBezier(names, times, keys)
+		else:
+			elf.motionProxy.angleInterpolationBezier(names, times, keys)
+
 
 		if audioFile != None:
 			if delayAudioInit != None:
@@ -130,19 +141,25 @@ class NaoMotion():
 
 			self.audioProxy.post.playFile(audioFile)
 
-	def launch(self, state, cBSI = None):
+	def launchAnimation(self, state, cBSI = None):
 
 		factorSpeed = 1.0
 		factorAmpl = 1.0
-
-		#@TODO parametre du BSI
 		if cBSI != None:
 			factorSpeed = cBSI.get_speed_animation()
 			factorAmpl = cBSI.get_amplitude_animation()
 
+		# save the starting time of the animation
+		msg = Animation()
+		msg.idRobot = self.idRobot
+		msg.idAnimation = state
+		msg.dateStart = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 		# launch an animations in function of random state
 		if state == 0:
-			self.runMotion(animations.stretch1_pose, factorSpeed, factorAmpl)
+			# the state 0 is the animation made by the robot to return the card
+			self.runMotion(animations.bendCard_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 1:
 			self.runMotion(animations.stretch2_pose, factorSpeed, factorAmpl)
@@ -151,11 +168,9 @@ class NaoMotion():
 			self.runMotion(animations.stretch3_pose, factorSpeed, factorAmpl)
 
 		elif state == 4:
-			#@TODO probleme avec musique et vitesse
 			self.runMotion(animations.helicopter_pose, factorSpeed, factorAmpl, "/home/nao/audio/wav/helicopter.wav")
 
 		elif state == 5:
-			#@TODO probleme avec musique et vitesse
 			self.runMotion(animations.sneeze_pose, factorSpeed, factorAmpl, "/home/nao/audio/wav/sneeze.wav", 1.0)
 
 		elif state == 6:
@@ -270,33 +285,42 @@ class NaoMotion():
 			self.runMotion(animations.robot_pose, factorSpeed, factorAmpl, "/home/nao/audio/wav/r2d2.wav", 2)
 
 		elif state == 43:
-			self.runMotion(animations.thinking3_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.thinking3_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 44:
-			self.runMotion(animations.thinking4_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.thinking4_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 45:
 			self.runMotion(animations.thinking5_pose, factorSpeed, factorAmpl)
 
 		elif state == 46:
-			self.runMotion(animations.thinking6_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.thinking6_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 47:
-			self.runMotion(animations.thinking7_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.thinking7_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 48:
-			self.runMotion(animations.thinking8_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.thinking8_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 49:
-			self.runMotion(animations.hesitation_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.hesitation_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 50:
-			self.runMotion(animations.hesitation2_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.hesitation2_pose, factorSpeed, factorAmpl, False)
 
 		elif state == 51:
 			self.runMotion(animations.hesitation3_pose, factorSpeed, factorAmpl)
 
-	def launch_animation(self, cBSI):
+		elif state == 52:
+			self.runMotion(animations.stretch1_pose, factorSpeed, factorAmpl)
+
+		# wait until the animation ends and then, save the end time of it and post that to the topic
+		while (self.isMoving()):
+			rospy.sleep(0.1)
+		msg.dateEnd = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		self.publisher_end_animation.publish(msg)
+
+	def nonFunctionalMove(self, cBSI):
 
 		# if the robot is not moving, launch animation
 		if self.isMoving() == False:
@@ -319,38 +343,15 @@ class NaoMotion():
 			#randomly select one state
 			randomState = random.choice(allStates)
 
-			# update last state parameter
+			# update last animation parameter
 			self.lastAnimation = randomState
 
 			# avoid eye traking and launch animation
 			self.faceFolowing(False)
 			self.breath(cBSI)
-			self.launch(randomState, cBSI)
+			self.launchAnimation(randomState, cBSI)
 			self.faceFolowing(cBSI.faceTracking)
 				
-	def return_card(self, cBSI = None):
-
-		## to remove
-		factorSpeed = 1.0
-		factorAmpl = 1.0
-
-		# wait that the robot finish moving
-		while self.isMoving() == True:
-			rospy.sleep(0.2)
-
-		if cBSI != None:
-			factorSpeed = cBSI.get_speed_animation()
-			factorAmpl = cBSI.get_amplitude_animation()
-
-		# randomly select two different thinking state
-		allStates = states["thinking"]
-		randomState = random.choice(allStates)
-
-		self.launch(randomState)
-		self.runMotion(animations.bendCard_pose, factorSpeed, factorAmpl)
-		rospy.sleep(1)
-		self.stand()
-
 	def functionalMove(self, success, cBSI):
 
 		# get type of animaiton available for this scale
@@ -378,7 +379,24 @@ class NaoMotion():
 		#randomly select one animation state
 		randomStateAnimation = random.choice(allStatesAnimation)
 		# launch animation
-		self.launch(randomStateAnimation)
+		self.launchAnimation(randomStateAnimation)
+
+	def return_card(self, cBSI = None):
+
+		# wait that the robot finish moving
+		while self.isMoving() == True:
+			rospy.sleep(0.1)
+
+		# randomly select two differents thinking states
+		allStates = states["thinking"]
+		randomState = random.choice(allStates)
+		# update last animation parameter
+		self.lastAnimation = randomState
+
+		self.launchAnimation(randomState)
+		self.launchAnimation(animation_return_card, cBSI)
+
+		self.stand()
 
 	def introduceNextRound(self, state):
 
@@ -396,13 +414,42 @@ class NaoMotion():
 		# make NAO speak
 		self.textSpeakProxy.post.say(randomQuote)
 
+	def introduceHimself(self):
+
+		# launch the animation corresponding to the salutation
+		self.runMotion(animations.introduction_pose)
+
+		# get the presentation sentence
+		stringToSay = states["introduction"][self.idRobot]
+
+		# NAO introduce itself
+		self.textSpeakProxy.post.say(stringToSay)
+		
+	def celebrateVictory(self):
+
+		# randomly select one state and launch it
+		randomState = random.choice(states["high"]["happy"])
+		self.launchAnimation(randomState)
+
+		# wait that the robot finish moving and say something to the kid
+		while self.isMoving() == True:
+			rospy.sleep(0.2)
+
+		# get one random sentence that NAO needs to say
+		randomStr = random.choice(states["celebration"])
+		self.textSpeakProxy.say(randomStr)
+
 	def sit_down(self):
 		# go to posture sit down
 		self.postureProxy.goToPosture("Crouch", 0.5)
 
 	def stand(self):
+
+		while self.isMoving():
+			rospy.sleep(0.1)
+
 		# go to posture stand init 
-		self.postureProxy.goToPosture("Stand", 0.5)
+		self.postureProxy.goToPosture("Stand", 0.45)
 
 	def control_posture(self):
 
@@ -454,27 +501,9 @@ class NaoMotion():
 		else:
 			self.faceDetectionProxy.stopAwareness()
 
-	def introduceHimself(self, idRobot):
+	def rest(self):
 
-		# launch the animation corresponding to the salutation
-		self.runMotion(animations.introduction_pose)
-
-		# get the presentation sentence
-		stringToSay = states["introduction"][idRobot]
-
-		# NAO introduce itself
-		self.textSpeakProxy.post.say(stringToSay)
-		
-	def celebrateVictory(self):
-
-		# randomly select one state and launch it
-		randomState = random.choice(states["high"]["happy"])
-		self.launch(randomState)
-
-		# wait that the robot finish moving and say something to the kid
-		while self.isMoving() == True:
-			rospy.sleep(0.2)
-
-		# get one random sentence that NAO needs to say
-		randomStr = random.choice(states["celebration"])
-		self.textSpeakProxy.say(randomStr)
+		self.motionProxy.setBreathEnabled("Body", False)
+		self.faceDetectionProxy.stopAwareness()
+		rospy.sleep(10)
+		self.motionProxy.rest()

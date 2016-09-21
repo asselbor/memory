@@ -1,6 +1,5 @@
 <launch>
   
-
   <node pkg="memory" type="animations_manager.py" name="animations_manager">
     <param name="id_robot" value="1" />
   	<param name="nao_ip" value="10.0.0.10" />
@@ -11,12 +10,12 @@
   	<param name="topic_poses" value="topic_poses" />
   	<param name="topic_activity" value="topic_activity" />
   	<param name="topic_end_animation" value="topic_end_animation" />
-  	<param name="parkinson_scale" value="3" />
+  	<param name="parkinson_scale" value="4" />
   </node>
 
   <node pkg="memory" type="animations_manager.py" name="animations_manager2">
   	<param name="id_robot" value="2" />
-  	<param name="nao_ip" value="10.0.0.15" />
+  	<param name="nao_ip" value="10.0.0.8" />
   	<param name="nao_port" value="9559" />
   	<param name="periodUpdateTimerBSI" value="0.1" />  
   	<param name="topic_animations" value="topic_animations" />
@@ -34,17 +33,24 @@
     <param name="topic_end_animation" value="topic_end_animation" />
     <param name="topic_gaze_match" value="topic_gaze_match" />
     <param name="topic_end_record" value="topic_end_record" />
-    <param name="time_between_moves" value="3" />
-    <param name="game_number" value="1" />
+    <param name="time_between_moves" value="7" />
+
+    <param name="game_number" value="3"/>
+    <param name="kid_identity" value="thibault_asselborn_25"/>
   </node>
+
 
   <!-- Start the feature face tracker -->
   <include file="$(find features_face)/launch/features_face.launch">
   </include>
 
-  <!-- Start the audio reccord -->
-  <include file="$(find record_ms)/launch/record_launch.launch">
+  <!-- Start the camera/audio reccord -->
+  <!--
+  <include file="$(find record_ms)/launch/record_launch.launch">g/latest'
+
+
   </include>
+  -->
 
 
 

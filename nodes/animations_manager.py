@@ -24,7 +24,7 @@ def TOp_callback_animations(data):
 
     # from the TELE_OP only
     # launch nao animation given in the topic
-    cNaoMotion.launch(data.data)
+    cNaoMotion.launchAnimation(data.data)
 
 def TOp_callback_poses(data):
 
@@ -96,7 +96,6 @@ def callback_activityRobot(data):
             # make nao following face
             cNaoMotion.faceFolowing(cBSI.faceTracking)
 
-
             if cBSI.periodAnimation != None:
                 # the robot is not busy anymore
                 robotBusy = False
@@ -131,25 +130,27 @@ def callback_activityRobot(data):
             # launch animation for returning 1st card when robot is idle
             cNaoMotion.return_card(cBSI)
 
-            # wait until animation if finished, and then publish that
+            # wait until animation is finished
             while cNaoMotion.isMoving():
                 rospy.sleep(0.1)
 
-            # tell to tablet to return first card
-            publisher_end_animation.publish(cNaoMotion.lastAnimation)
-
-            # launch animation for returning 2nd card when robot is idle
+            # launch animation for returning 2nd card
             cNaoMotion.return_card(cBSI)
 
-            # wait until animation if finished, and then publish that
+            # wait until animation is finished
             while cNaoMotion.isMoving():
                 rospy.sleep(0.1)
 
             # express emotion in function of result of move
             cNaoMotion.functionalMove(bool(data.result), cBSI)
 
-            # the two cards have been returned, tell that to tablet and memory game
-            publisher_end_animation.publish(cNaoMotion.lastAnimation)
+            # wait until animation is finished,
+            while cNaoMotion.isMoving():
+                rospy.sleep(0.1)
+
+            # nao goes back to origin position
+            rospy.sleep(1)
+            cNaoMotion.stand()
 
         elif state == "winner":
             # the robot is busy (doing a task)
@@ -161,20 +162,35 @@ def callback_activityRobot(data):
 
             # make the robot celebrate the victory
             cNaoMotion.celebrateVictory()
+            cNaoMotion.rest()
 
+        elif state == "end":
+
+            robotBusy = True
+
+            # stop animation timer
+            try:
+                timerLaunchAnimation.shutdown()
+            except:
+                pass
+
+            # wait that nao stops moving
+            while cNaoMotion.isMoving():
+                rospy.sleep(0.1)
+
+            # the robot will sit down
+            cNaoMotion.sit_down()
 
 def callback_timer_animation(event):
 
     global timerLaunchAnimation
     if robotBusy == False:
-        cNaoMotion.launch_animation(cBSI)
+        cNaoMotion.nonFunctionalMove(cBSI)
 
         # update timer frequency and relaunch it
         timerLaunchAnimation.shutdown()
         timerLaunchAnimation = rospy.Timer(rospy.Duration(cBSI.periodAnimation), callback_timer_animation, oneshot=True)
  
-
-
 
 if __name__ == "__main__":
 
@@ -194,7 +210,7 @@ if __name__ == "__main__":
     # create the BSI class that will contain the behavior that the robot needs to show
     cBSI = BSI(parkinson_scale)
     # create animation class that will launch the animations
-    cNaoMotion = NaoMotion(NAO_IP, int(PORT), cBSI)
+    cNaoMotion = NaoMotion(NAO_IP, int(PORT), cBSI, robotId)
 
     # subscribers
     TOPIC_ANIMATIONS = rospy.get_param('~topic_animations')
@@ -205,10 +221,6 @@ if __name__ == "__main__":
     rospy.Subscriber(TOPIC_SETTINGS, UInt8, TOp_callback_settings)
     TOPIC_ACTIVITY = rospy.get_param('~topic_activity')
     rospy.Subscriber(TOPIC_ACTIVITY, Activity, callback_activityRobot)
-
-    # Publishers
-    TOPIC_END_ANIMATION = rospy.get_param('~topic_end_animation')
-    publisher_end_animation = rospy.Publisher(TOPIC_END_ANIMATION, UInt8, queue_size=10)
 
     # debug topic
     debug = rospy.Publisher("debug", String, queue_size=10)

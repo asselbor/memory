@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Activity.msg
+  Animation.msg
 )
 
 generate_messages(

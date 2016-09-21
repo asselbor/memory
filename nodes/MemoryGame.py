@@ -11,8 +11,9 @@ from CardReminded import CardReminded
 import random
 import rospy
 import datetime
+import os
 from std_msgs.msg import String, UInt8
-from memory.msg import Activity
+from memory.msg import Activity, Animation
 from os.path import expanduser
 
 # IDLE
@@ -55,7 +56,7 @@ class MemoryGame():
 
 		# create topic receiving informations concerning the end of robot animation
 		TOPIC_END_ANIMATION = rospy.get_param('~topic_end_animation')
-		rospy.Subscriber(TOPIC_END_ANIMATION, UInt8, self.callBackAnimationEnded)
+		rospy.Subscriber(TOPIC_END_ANIMATION, Animation, self.callBackAnimationEnded)
 
 		# create topic to receive message gaze match
 		TOPIC_GAZE_MATCH = rospy.get_param('~topic_gaze_match')
@@ -63,8 +64,8 @@ class MemoryGame():
 
 		# boolean indicating if the robot is doing animation or not
 		self.nbCardReturned = 0
-		# id of last animation played by robot
-		self.lastAnimationId = None
+		# save the t0 (starting point) of the experiment
+		self.t0Experiment = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 	def createPlayers(self):
 		idPlayer = 0
@@ -124,7 +125,6 @@ class MemoryGame():
 		# communicate nb value to position to tablet
 		publisher_tablet.publish(myStr)
 
-		
 	def nextPlayer(self):
 		self.player += 1
 
@@ -171,9 +171,6 @@ class MemoryGame():
 				newMsg.statePlayed = statePlayed
 				publisher_activity.publish(newMsg)
 
-				# log animation start
-				dateStartAnimation = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 				# wait that the animation for returning 1st card is in progress
 				while (self.nbCardReturned == 0):
 					rospy.sleep(0.1)
@@ -185,9 +182,6 @@ class MemoryGame():
 				# wait that the animation for returning 2nb card is in progressg
 				while (self.nbCardReturned == 1):
 					rospy.sleep(0.1)
-
-				# log animation end
-				dateEndAnimation = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 				# at this point, the robot has returned the second card, send this information to the tablet
 				myStr = "s " + str(card2.getIndice()) + " " + str(int(success)) + " " + str(roundPlayer)
@@ -204,9 +198,7 @@ class MemoryGame():
 
 				# log action
 				self.listActionLog.append(ActionLog(card1, card2, roundPlayer, self.roundGame, success, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-				# log animation
-				self.listAnimationLog.append(AnimationLog(roundPlayer, self.lastAnimationId, dateStartAnimation, dateEndAnimation))
-
+				
 				# wait a moment
 				rospy.sleep(TIME_BETWEEN_MOVES)
 
@@ -322,27 +314,37 @@ class MemoryGame():
 		# check if success
 		success = self.isPair(card1, card2)
 
-		# if success = false, important to keep that in mind for later move, if success not needed because robot won't play these cards anymway
-		if success == False:
-			self.listCardReminded.append(CardReminded(card1, self.roundGame))
-			self.listCardReminded.append(CardReminded(card2, self.roundGame))
-
 		# log action
 		self.listActionLog.append(ActionLog(card1, card2, 0, self.roundGame, success, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
-		# increase round game
-		self.roundGame += 1
+		# if success = false, important to keep that in mind for later move, if success not needed because robot won't play these cards anymway
+		if self.gameFinished == False:
+			self.listCardReminded.append(CardReminded(card1, self.roundGame))
+			self.listCardReminded.append(CardReminded(card2, self.roundGame))
 
-		# switch to next player
-		self.nextPlayer()
+			# increase round game
+			self.roundGame += 1
+
+			# wait a moment
+			rospy.sleep(TIME_BETWEEN_MOVES)
+
+			# switch to next player
+			self.nextPlayer()
+		else:
+			# at this point one of the player has won, launch animation for robots
+			self.saveLogs()
 
 	def callBackAnimationEnded(self, data):
 
-		# save id of last animation in order to save it in log
-		self.lastAnimationId = data.data
+		debug.publish(str(data.idAnimation))
 
-		# no animations are in progress anymore
-		self.nbCardReturned += 1
+		# if the animation id the return of a card
+		if data.idAnimation == 0:
+			# no animations are in progress anymore
+			self.nbCardReturned += 1
+
+		# log animation
+		self.listAnimationLog.append(AnimationLog(data.idRobot, data.idAnimation, data.dateStart, data.dateEnd))
 
 	def callBackGazeMatch(self, data):
 
@@ -359,36 +361,37 @@ class MemoryGame():
 
 		home = expanduser("~")
 		date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		path = home + "/outputMemory/" + KID_IDENTITY + "/"
+
+		# create directory concerning the name of the user
+		try:
+			os.stat(path)
+		except:
+			os.makedirs(path)
 
 		# save action logs
-		with open(home + "/outputMemory/outputActions_" + date + ".txt", "w") as f:
-			f.write("game at: " + date + " game number: " + str(self.gameNumber) + "\n")
-
+		with open(path + "outputActions_" + str(GAME_NUMBER) + "_" + self.t0Experiment + ".txt", "w") as f:
 			for actionLog in self.listActionLog:
-				myStr = "round: " + str(actionLog.roundGame) + " date: " + actionLog.date + " player: " + str(actionLog.player)
-				myStr += " cards: " + str(actionLog.card1.getIndice()) + " " + str(actionLog.card2.getIndice()) + " success: " + str(actionLog.success) + "\n"
+				myStr = str(actionLog.roundGame) + "," + actionLog.date + "," + str(actionLog.player)
+				myStr += "" + str(actionLog.card1.getIndice()) + "," + str(actionLog.card2.getIndice()) + "," + str(actionLog.success) + "\n"
 				f.write(myStr)
 
 			f.write("winner is the player: " + str(self.findWinner()))
 			f.close()
 
 		# save gaze logs
-		with open(home + "/outputMemory/outputGaze_" + date + ".txt", "w") as f:
-			f.write("game at: " + date + " game number: " + str(self.gameNumber) + "\n")
-
+		with open(path + "outputGaze_" + str(GAME_NUMBER) + "_" + self.t0Experiment + ".txt", "w") as f:
 			for gazeLog in self.listGazeLog:
-				myStr = " date: " + gazeLog.date + " robot match: " + str(gazeLog.robotId) + "\n"
+				myStr = gazeLog.date + "," + str(gazeLog.robotId) + "\n"
 				f.write(myStr)
 
 			f.close()
 
 		# save animation logs
-		with open(home + "/outputMemory/outputAnimation_" + date + ".txt", "w") as f:
-			f.write("game at: " + date + " game number: " + str(self.gameNumber) + "\n")
-
+		with open(path + "outputAnimation_" + str(GAME_NUMBER) + "_" + self.t0Experiment + ".txt", "w") as f:
 			for animationLog in self.listAnimationLog:
-				myStr = " date start: " + animationLog.dateStart + "  date end: " + animationLog.dateEnd
-				myStr += " robotId: " + str(animationLog.robotId) + " animationId: " + str(animationLog.animationId) + "\n"
+				myStr = animationLog.dateStart + "," + animationLog.dateEnd + ","
+				myStr += str(animationLog.robotId) + "," + str(animationLog.animationId) + "\n"
 				f.write(myStr)
 
 			f.close()
@@ -421,9 +424,10 @@ if __name__ == "__main__":
 
 	# get the time to wait between player moves
 	TIME_BETWEEN_MOVES = float(rospy.get_param('~time_between_moves'))
-
 	# get the game number
 	GAME_NUMBER = int(rospy.get_param('~game_number'))
+	# get the kid identity
+	KID_IDENTITY = rospy.get_param('~kid_identity')
 
 	# debug topic
 	debug = rospy.Publisher("debug", String, queue_size=10)
@@ -457,6 +461,16 @@ if __name__ == "__main__":
 	game = MemoryGame(nbPlayer = 3, gameNumber = GAME_NUMBER)
 	game.play()
 	game.saveLogs()
+
+
+	# publish message telling that the game is finished
+	rospy.sleep(15)
+	newMsg = Activity()
+	newMsg.player = 1
+	newMsg.state = "end"
+	publisher_activity.publish(newMsg)
+	newMsg.player = 2
+	publisher_activity.publish(newMsg)
 
 
 
