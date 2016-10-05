@@ -199,14 +199,18 @@ class MemoryGame():
 				# log action
 				self.listActionLog.append(ActionLog(card1, card2, roundPlayer, self.roundGame, success, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 				
+				# hack -> to be renoved 
+				if self.player == 2:
+					rospy.sleep(4)
+
 				# wait a moment
 				rospy.sleep(TIME_BETWEEN_MOVES)
 
 				# switch to next player
 				self.nextPlayer()
 
-			# increase round game
-			self.roundGame += 1
+				# increase round game
+				self.roundGame += 1
 
 		# at this point one of the player has won, launch animation for robots
 		self.endGame()
@@ -334,9 +338,8 @@ class MemoryGame():
 			# at this point one of the player has won, launch animation for robots
 			self.saveLogs()
 
-	def callBackAnimationEnded(self, data):
 
-		debug.publish(str(data.idAnimation))
+	def callBackAnimationEnded(self, data):
 
 		# if the animation id the return of a card
 		if data.idAnimation == 0:
@@ -363,24 +366,28 @@ class MemoryGame():
 		date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		path = home + "/outputMemory/" + KID_IDENTITY + "/"
 
-		# create directory concerning the name of the user
+		# create directory concerning the name of the user if does not exists
 		try:
 			os.stat(path)
 		except:
 			os.makedirs(path)
 
+
+		if self.gameNumber == 3:
+			self.gameNumber = 2
+
 		# save action logs
-		with open(path + "outputActions_" + str(GAME_NUMBER) + "_" + self.t0Experiment + ".txt", "w") as f:
+		with open(path + "outputActions_" + str(self.gameNumber) + "_" + self.t0Experiment + ".txt", "w") as f:
 			for actionLog in self.listActionLog:
 				myStr = str(actionLog.roundGame) + "," + actionLog.date + "," + str(actionLog.player)
-				myStr += "" + str(actionLog.card1.getIndice()) + "," + str(actionLog.card2.getIndice()) + "," + str(actionLog.success) + "\n"
+				myStr += "," + str(actionLog.card1.getIndice()) + "," + str(actionLog.card2.getIndice()) + "," + str(actionLog.success) + "\n"
 				f.write(myStr)
 
-			f.write("winner is the player: " + str(self.findWinner()))
+			#f.write("winner is the player: " + str(self.findWinner()))
 			f.close()
 
 		# save gaze logs
-		with open(path + "outputGaze_" + str(GAME_NUMBER) + "_" + self.t0Experiment + ".txt", "w") as f:
+		with open(path + "outputGaze_" + str(self.gameNumber) + "_" + self.t0Experiment + ".txt", "w") as f:
 			for gazeLog in self.listGazeLog:
 				myStr = gazeLog.date + "," + str(gazeLog.robotId) + "\n"
 				f.write(myStr)
@@ -388,7 +395,7 @@ class MemoryGame():
 			f.close()
 
 		# save animation logs
-		with open(path + "outputAnimation_" + str(GAME_NUMBER) + "_" + self.t0Experiment + ".txt", "w") as f:
+		with open(path + "outputAnimation_" + str(self.gameNumber) + "_" + self.t0Experiment + ".txt", "w") as f:
 			for animationLog in self.listAnimationLog:
 				myStr = animationLog.dateStart + "," + animationLog.dateEnd + ","
 				myStr += str(animationLog.robotId) + "," + str(animationLog.animationId) + "\n"
@@ -427,11 +434,11 @@ if __name__ == "__main__":
 	# get the game number
 	GAME_NUMBER = int(rospy.get_param('~game_number'))
 	# get the kid identity
-	KID_IDENTITY = rospy.get_param('~kid_identity')
+	KID_IDENTITY = rospy.get_param('~identity')
+
 
 	# debug topic
 	debug = rospy.Publisher("debug", String, queue_size=10)
-
 	# give time for rospy to connect
 	rospy.sleep(1)
 
@@ -462,15 +469,14 @@ if __name__ == "__main__":
 	game.play()
 	game.saveLogs()
 
-
 	# publish message telling that the game is finished
-	rospy.sleep(15)
-	newMsg = Activity()
-	newMsg.player = 1
-	newMsg.state = "end"
-	publisher_activity.publish(newMsg)
-	newMsg.player = 2
-	publisher_activity.publish(newMsg)
+	# rospy.sleep(15)
+	# newMsg = Activity()
+	# newMsg.player = 1
+	# newMsg.state = "end"
+	# publisher_activity.publish(newMsg)
+	# newMsg.player = 2
+	# publisher_activity.publish(newMsg)
 
 
 

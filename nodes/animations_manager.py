@@ -83,7 +83,7 @@ def callback_activityRobot(data):
                 rospy.sleep(0.1)
 
             # make the robot introduce himself
-            cNaoMotion.introduceHimself(playerId)
+            cNaoMotion.introduceHimself()
 
         elif state == "idle":
             if cNaoMotion.get_posture() == "Crouch":
@@ -130,6 +130,7 @@ def callback_activityRobot(data):
             # launch animation for returning 1st card when robot is idle
             cNaoMotion.return_card(cBSI)
 
+
             # wait until animation is finished
             while cNaoMotion.isMoving():
                 rospy.sleep(0.1)
@@ -140,6 +141,7 @@ def callback_activityRobot(data):
             # wait until animation is finished
             while cNaoMotion.isMoving():
                 rospy.sleep(0.1)
+
 
             # express emotion in function of result of move
             cNaoMotion.functionalMove(bool(data.result), cBSI)
@@ -162,7 +164,7 @@ def callback_activityRobot(data):
 
             # make the robot celebrate the victory
             cNaoMotion.celebrateVictory()
-            cNaoMotion.rest()
+            #cNaoMotion.rest()
 
         elif state == "end":
 
@@ -179,7 +181,7 @@ def callback_activityRobot(data):
                 rospy.sleep(0.1)
 
             # the robot will sit down
-            cNaoMotion.sit_down()
+            #cNaoMotion.sit_down()
 
 def callback_timer_animation(event):
 

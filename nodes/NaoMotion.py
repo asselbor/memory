@@ -124,7 +124,7 @@ class NaoMotion():
 
 	def runMotion(self, pose, factorSpeed = 1.0, factorAmpl = 1.0, audioFile = None, delayAudioInit = None, post = True):
 
-		# post the animaiton
+		# post the animation
 		times = self.increaseSpeed(pose.times, factorSpeed)
 		keys = self.increaseAmplitude(pose.keys, pose.names, factorAmpl)
 		names = pose.names
@@ -132,7 +132,7 @@ class NaoMotion():
 		if post == True:
 			self.motionProxy.post.angleInterpolationBezier(names, times, keys)
 		else:
-			elf.motionProxy.angleInterpolationBezier(names, times, keys)
+			self.motionProxy.angleInterpolationBezier(names, times, keys)
 
 
 		if audioFile != None:
@@ -159,7 +159,7 @@ class NaoMotion():
 		# launch an animations in function of random state
 		if state == 0:
 			# the state 0 is the animation made by the robot to return the card
-			self.runMotion(animations.bendCard_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.bendCard_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 1:
 			self.runMotion(animations.stretch2_pose, factorSpeed, factorAmpl)
@@ -186,10 +186,10 @@ class NaoMotion():
 			self.runMotion(animations.rest_pose, factorSpeed, factorAmpl)
 
 		elif state == 10:
-			self.runMotion(animations.showMuscles1_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.showMuscles1_pose, factorSpeed, factorAmpl, post = False)
 			
 		elif state == 11:
-			self.runMotion(animations.showMuscles2_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.showMuscles2_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 12:
 			self.runMotion(animations.scratchHead_pose, factorSpeed, factorAmpl)
@@ -210,10 +210,10 @@ class NaoMotion():
 			self.runMotion(animations.happy_pose, factorSpeed, factorAmpl)
 
 		elif state == 18:
-			self.runMotion(animations.happy2_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.happy2_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 19:
-			self.runMotion(animations.happy3_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.happy3_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 20:
 			self.runMotion(animations.proud_pose, factorSpeed, factorAmpl)
@@ -225,13 +225,13 @@ class NaoMotion():
 			self.runMotion(animations.alienated_pose, factorSpeed, factorAmpl)
 
 		elif state == 23:
-			self.runMotion(animations.disappointed_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.disappointed_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 24:
 			self.runMotion(animations.embarassed_pose, factorSpeed, factorAmpl)
 
 		elif state == 25:
-			self.runMotion(animations.exhausted_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.exhausted_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 26:
 			self.runMotion(animations.exhausted2_pose, factorSpeed, factorAmpl)
@@ -243,19 +243,19 @@ class NaoMotion():
 			self.runMotion(animations.excited2_pose, factorSpeed, factorAmpl)
 
 		elif state == 29:
-			self.runMotion(animations.stubborn_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.stubborn_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 30:
-			self.runMotion(animations.stubborn_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.stubborn_pose, factorSpeed, factorAmpl, post = False)
 			
 		elif state == 31:
-			self.runMotion(animations.desperate_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.desperate_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 32:
-			self.runMotion(animations.desperate2_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.desperate2_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 33:
-			self.runMotion(animations.desperate3_pose, factorSpeed, factorAmpl)
+			self.runMotion(animations.desperate3_pose, factorSpeed, factorAmpl, post = False)
 
 		elif state == 34:
 			self.runMotion(animations.shootGround_pose, factorSpeed, factorAmpl)
@@ -285,28 +285,28 @@ class NaoMotion():
 			self.runMotion(animations.robot_pose, factorSpeed, factorAmpl, "/home/nao/audio/wav/r2d2.wav", 2)
 
 		elif state == 43:
-			self.runMotion(animations.thinking3_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.thinking3_pose, factorSpeed, factorAmpl)
 
 		elif state == 44:
-			self.runMotion(animations.thinking4_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.thinking4_pose, factorSpeed, factorAmpl)
 
 		elif state == 45:
 			self.runMotion(animations.thinking5_pose, factorSpeed, factorAmpl)
 
 		elif state == 46:
-			self.runMotion(animations.thinking6_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.thinking6_pose, factorSpeed, factorAmpl)
 
 		elif state == 47:
-			self.runMotion(animations.thinking7_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.thinking7_pose, factorSpeed, factorAmpl)
 
 		elif state == 48:
-			self.runMotion(animations.thinking8_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.thinking8_pose, factorSpeed, factorAmpl)
 
 		elif state == 49:
-			self.runMotion(animations.hesitation_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.hesitation_pose, factorSpeed, factorAmpl)
 
 		elif state == 50:
-			self.runMotion(animations.hesitation2_pose, factorSpeed, factorAmpl, False)
+			self.runMotion(animations.hesitation2_pose, factorSpeed, factorAmpl)
 
 		elif state == 51:
 			self.runMotion(animations.hesitation3_pose, factorSpeed, factorAmpl)
@@ -342,6 +342,7 @@ class NaoMotion():
 
 			#randomly select one state
 			randomState = random.choice(allStates)
+
 
 			# update last animation parameter
 			self.lastAnimation = randomState
