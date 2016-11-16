@@ -93,7 +93,7 @@ def callback_activityRobot(data):
             # make nao breath
             cNaoMotion.breath(cBSI)
 
-            # make nao following face
+            # face tracking
             cNaoMotion.faceFolowing(cBSI.faceTracking)
 
             if cBSI.periodAnimation != None:
@@ -130,7 +130,6 @@ def callback_activityRobot(data):
             # launch animation for returning 1st card when robot is idle
             cNaoMotion.return_card(cBSI)
 
-
             # wait until animation is finished
             while cNaoMotion.isMoving():
                 rospy.sleep(0.1)
@@ -142,7 +141,6 @@ def callback_activityRobot(data):
             while cNaoMotion.isMoving():
                 rospy.sleep(0.1)
 
-
             # express emotion in function of result of move
             cNaoMotion.functionalMove(bool(data.result), cBSI)
 
@@ -151,7 +149,7 @@ def callback_activityRobot(data):
                 rospy.sleep(0.1)
 
             # nao goes back to origin position
-            rospy.sleep(1)
+            rospy.sleep(0.5)
             cNaoMotion.stand()
 
         elif state == "winner":
@@ -181,7 +179,7 @@ def callback_activityRobot(data):
                 rospy.sleep(0.1)
 
             # the robot will sit down
-            #cNaoMotion.sit_down()
+            cNaoMotion.sit_down()
 
 def callback_timer_animation(event):
 

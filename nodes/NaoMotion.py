@@ -65,16 +65,13 @@ import animations.IdontKnow_pose
 import animations.IdontKnow2_pose
 import animations.introduction_pose
 
-
-from BSI import *
-from naoqi import ALProxy
 import random
 import time
 import copy
 import datetime
-
-#debug
 import rospy
+from BSI import *
+from naoqi import ALProxy
 from std_msgs.msg import String
 from memory.msg import Animation
 
@@ -83,7 +80,7 @@ states = {
 "low": {"normal": [7, 13, 14, 20, 22, 24, 35, 39, 40, 41], "happy": [10, 11, 18, 19], "sad": [23, 32, 33]}, 
 "medium": {"normal": [52, 6, 8, 9, 1, 21, 5, 12, 26], "happy": [11, 18, 19], "sad": [25, 29, 30, 31]}, 
 "high": {"normal": [1, 2, 4, 37, 38, 42], "happy": [15, 16, 17], "sad": [27, 28, 34, 36]},
-"thinking": [43, 44, 46, 47, 48, 49, 50], #45, 51 removed due to the robot standing up too quickly
+"thinking": [43, 44, 45, 46, 47, 48, 49, 50, 51], #45, 51 removed due to the robot standing up too quickly
 "quotes": {"confident": ["A moi", "c'est mon tour", "Attend, je vais te montrer !", "Facile !", "Regarde, c'est facile !", "Regarde ce qu'il faut faire !"], "neutral": ["A moi de jouer", "C'est mon tour", "Facile, Regarde"], "random": ["Pas facile", "Je ne sais pas quoi jouer", "Au hasard"], "success": ["Et bim!", "C'est qui le patron ?", "Yes!", "Un point de plus pour moi"], "defeat": ["Au prochain", "J'ai pas de chance", "Pas de bol!", "Au suivant"]},
 "introduction": {1: "Salut. Je m'appelle clem. Est ce que tu veux jouer avec moi ?", 2: "Hello. Moi c'est mimi. On fait une partie ?"},
 "celebration": ["J'ai gagné la partie", "La victoire est pour moi", "Je suis le meilleur"]
@@ -106,7 +103,7 @@ class NaoMotion():
 		self.lastAnimation = 0
 		self.lastQuote = ""
 
-		# set language to speak french
+		# set language to speak as french
 		self.textSpeakProxy.setLanguage("French")
 
 		# publisher topics
@@ -118,23 +115,23 @@ class NaoMotion():
 		# activate default behavior nao
 		self.breath(cBSI)
 		self.faceFolowing(cBSI.faceTracking)
-
-		# a robot is defined by a unique id
+		# Robot is defined by a unique id
 		self.idRobot = idRobot
 
 	def runMotion(self, pose, factorSpeed = 1.0, factorAmpl = 1.0, audioFile = None, delayAudioInit = None, post = True):
 
-		# post the animation
+		# get times, angles and names
 		times = self.increaseSpeed(pose.times, factorSpeed)
 		keys = self.increaseAmplitude(pose.keys, pose.names, factorAmpl)
 		names = pose.names
 
+		# launch animation
 		if post == True:
 			self.motionProxy.post.angleInterpolationBezier(names, times, keys)
 		else:
 			self.motionProxy.angleInterpolationBezier(names, times, keys)
 
-
+		# launch audio file
 		if audioFile != None:
 			if delayAudioInit != None:
 				time.sleep(delayAudioInit)
@@ -143,6 +140,7 @@ class NaoMotion():
 
 	def launchAnimation(self, state, cBSI = None):
 
+		# get factor speed and amplitude
 		factorSpeed = 1.0
 		factorAmpl = 1.0
 		if cBSI != None:
@@ -314,9 +312,10 @@ class NaoMotion():
 		elif state == 52:
 			self.runMotion(animations.stretch1_pose, factorSpeed, factorAmpl)
 
-		# wait until the animation ends and then, save the end time of it and post that to the topic
+		# wait until the animation ends and then, save the ending time and post that it to the topic
 		while (self.isMoving()):
 			rospy.sleep(0.1)
+
 		msg.dateEnd = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 		self.publisher_end_animation.publish(msg)
 
@@ -325,10 +324,10 @@ class NaoMotion():
 		# if the robot is not moving, launch animation
 		if self.isMoving() == False:
 
-			# control robot posture in order to avoid animation if the robot in crouched
+			# control robot posture in order to avoid animation if the robot is not standing up
 			self.control_posture()
 
-			# get type of animaiton available for this scale
+			# get type of animation available for this scale
 			levelsType = cBSI.get_mood()
 
 			# get the mood that the robot should have
@@ -342,7 +341,6 @@ class NaoMotion():
 
 			#randomly select one state
 			randomState = random.choice(allStates)
-
 
 			# update last animation parameter
 			self.lastAnimation = randomState
@@ -391,9 +389,11 @@ class NaoMotion():
 		# randomly select two differents thinking states
 		allStates = states["thinking"]
 		randomState = random.choice(allStates)
+
 		# update last animation parameter
 		self.lastAnimation = randomState
 
+		# launch animations
 		self.launchAnimation(randomState)
 		self.launchAnimation(animation_return_card, cBSI)
 
@@ -434,7 +434,7 @@ class NaoMotion():
 
 		# wait that the robot finish moving and say something to the kid
 		while self.isMoving() == True:
-			rospy.sleep(0.2)
+			rospy.sleep(0.1)
 
 		# get one random sentence that NAO needs to say
 		randomStr = random.choice(states["celebration"])

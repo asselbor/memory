@@ -12,12 +12,13 @@
   	<param name="topic_poses" value="topic_poses" />
   	<param name="topic_activity" value="topic_activity" />
   	<param name="topic_end_animation" value="topic_end_animation" />
-  	<param name="parkinson_scale" value="4" />
+  	<param name="parkinson_scale" value="3" />
   </node>
 
+  <!--
   <node pkg="memory" type="animations_manager.py" name="animations_manager2">
   	<param name="id_robot" value="2" />
-  	<param name="nao_ip" value="10.0.0.3" />
+  	<param name="nao_ip" value="10.0.0.14" />
   	<param name="nao_port" value="9559" />
   	<param name="periodUpdateTimerBSI" value="0.1" />  
   	<param name="topic_animations" value="topic_animations" />
@@ -25,8 +26,9 @@
   	<param name="topic_poses" value="topic_poses" />
   	<param name="topic_activity" value="topic_activity" />
   	<param name="topic_end_animation" value="topic_end_animation" />
-  	<param name="parkinson_scale" value="1" />
+  	<param name="parkinson_scale" value="3" />
   </node>
+  -->
 
   <node pkg="memory" type="MemoryGame.py" name="memory_game">
     <param name="topic_activity" value="topic_activity" />
@@ -48,13 +50,9 @@
 
   <!-- Start the camera/audio reccord -->
   <!--
-  <include file="$(find record_ms)/launch/record_launch.launch">
+  <include file="$(find record_audio_video)/launch/record_launch.launch">
     <arg name="identity" value="$(arg identity)"/>
   </include>
   -->
-
-
-
-
 
 </launch>

@@ -24,7 +24,6 @@ class MemoryGame():
 	def __init__(self, nbPlayer = 3, nbCard = 16, firstPlayer = 0, gameNumber = 0):
 		
 		self.nbPlayer = nbPlayer
-
 		self.nbCard = nbCard
 		self.roundGame = 0
 		self.gameNumber = gameNumber
@@ -64,7 +63,7 @@ class MemoryGame():
 
 		# boolean indicating if the robot is doing animation or not
 		self.nbCardReturned = 0
-		# save the t0 (starting point) of the experiment
+		# save the t0 (starting time) of the experiment
 		self.t0Experiment = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 	def createPlayers(self):
@@ -149,6 +148,7 @@ class MemoryGame():
 
 		while(self.gameFinished == False):
 
+			# if it is a robot that needs to play
 			if self.player != 0:
 
 				# the robot is playing
@@ -200,8 +200,8 @@ class MemoryGame():
 				self.listActionLog.append(ActionLog(card1, card2, roundPlayer, self.roundGame, success, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 				
 				# hack -> to be renoved 
-				if self.player == 2:
-					rospy.sleep(4)
+				if self.player == 1:
+					rospy.sleep(3)
 
 				# wait a moment
 				rospy.sleep(TIME_BETWEEN_MOVES)
@@ -338,7 +338,6 @@ class MemoryGame():
 			# at this point one of the player has won, launch animation for robots
 			self.saveLogs()
 
-
 	def callBackAnimationEnded(self, data):
 
 		# if the animation id the return of a card
@@ -429,6 +428,9 @@ if __name__ == "__main__":
 	TOPIC_PUBLISHER_END_RECORD = rospy.get_param('~topic_end_record')
 	publisher_end_record = rospy.Publisher(TOPIC_PUBLISHER_END_RECORD, String, queue_size=10)
 
+	# debug topic
+	debug = rospy.Publisher("debug", String, queue_size=10)
+
 	# get the time to wait between player moves
 	TIME_BETWEEN_MOVES = float(rospy.get_param('~time_between_moves'))
 	# get the game number
@@ -437,11 +439,11 @@ if __name__ == "__main__":
 	KID_IDENTITY = rospy.get_param('~identity')
 
 
-	# debug topic
-	debug = rospy.Publisher("debug", String, queue_size=10)
+
+
+
 	# give time for rospy to connect
 	rospy.sleep(1)
-
 
 	# the robots needs to introduce themself if it's the first game
 	if GAME_NUMBER == 0:
@@ -451,7 +453,6 @@ if __name__ == "__main__":
 		newMsg.state = "introduction"
 		publisher_activity.publish(newMsg)
 		rospy.sleep(4)
-
 		#second robot introduces himself
 		newMsg.player = 2
 		publisher_activity.publish(newMsg)
@@ -464,7 +465,7 @@ if __name__ == "__main__":
 	newMsg.player = 2
 	publisher_activity.publish(newMsg)
 
-	# launch the game
+	# launch memory game
 	game = MemoryGame(nbPlayer = 3, gameNumber = GAME_NUMBER)
 	game.play()
 	game.saveLogs()
@@ -477,8 +478,6 @@ if __name__ == "__main__":
 	# publisher_activity.publish(newMsg)
 	# newMsg.player = 2
 	# publisher_activity.publish(newMsg)
-
-
 
 	rospy.spin()
 
