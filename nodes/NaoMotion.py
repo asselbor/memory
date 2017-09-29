@@ -107,7 +107,6 @@ class NaoMotion():
 		self.textSpeakProxy.setLanguage("French")
 
 		# publisher topics
-		self.debug = rospy.Publisher("debug", String, queue_size=10)
 		self.publisher_end_animation = rospy.Publisher("topic_end_animation", Animation, queue_size=10)
 
 		# activate module anti collision
